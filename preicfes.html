@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" id="theme-color-meta" content="#0f172a">
+    <title>Simulación de tu puntaje - lumen 
+    </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* --- Colores Tema Oscuro (Default) --- */
+            --bg-primary: #0f172a; 
+            --bg-secondary: rgba(30, 41, 59, 0.7);
+            --bg-tertiary: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --border-color: rgba(71, 85, 105, 0.7);
+            --shadow-color: rgba(0, 0, 0, 0.2);
+            --glow-color: var(--accent-color);
+        }
+
+        html.light {
+            /* --- Colores Tema Claro --- */
+            --bg-primary: #f1f5f9;
+            --bg-secondary: rgba(255, 255, 255, 0.6);
+            --bg-tertiary: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border-color: rgba(226, 232, 240, 0.5);
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+
+        html { scroll-behavior: smooth; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: ORANGE; 
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+            overflow-x: hidden;
+        }
+        
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .watermark {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:);
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover; 
+            opacity: 0.04; 
+            pointer-events: none;
+            z-index: 40; 
+        }
+        
+        html.light .watermark {
+            filter: invert(1); 
+        }
+
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid transparent; 
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px var(--shadow-color), 0 2px 4px -2px var(--shadow-color);
+            border-radius: 1rem;
+        }
+
+        .card::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: inherit;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.4s ease-out;
+            border: 1px solid var(--glow-color);
+        }
+
+        .card:hover {
+            transform: translateY(-5px) scale(1.01);
+            box-shadow: 0 10px 15px -3px var(--shadow-color), 0 4px 6px -4px var(--shadow-color);
+        }
+
+        .card:hover::after {
+            opacity: 1;
+        }
+
+        .btn {
+            transition: all 0.2s ease;
+            transform-origin: center;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 50; opacity: 0; transition: opacity 0.3s ease; pointer-events: none;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content { 
+            background-color: var(--bg-primary); 
+            border: 1px solid var(--border-color);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translateY(20px) scale(0.95);
+            transition: transform 0.3s ease-out;
+        }
+        .modal-overlay.active .modal-content { transform: translateY(0) scale(1); }
+        
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+
+        .animated-item {
+            opacity: 0;
+        }
+
+        
+            }
+        }
+    </style>
+</head>
+<body class="w-full">
+
+    <canvas id="particle-canvas"></canvas>
+    <div class="watermark"></div>
+
+    <div class="container mx-auto p-4 lg:p-8 max-w-screen-2xl relative z-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <aside class="lg:col-span-3 h-max space-y-8">
+                <div class="text-center animated-item">
+                    <img src="https://p16-sign-sg.tiktokcdn.com/tos-alisg-avt-0068/0b3c642c6046cbe667f810ccdf22cf49~tplv-tiktokx-cropcenter:1080:1080.jpeg?dr=14579&refresh_token=c2111d29&x-expires=1761271200&x-signature=Xx25vaUbAxiOHP1w%2BLB34GZVuOQ%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=81f88b70&idc=maliva" alt="Logo LUMEN
+                    " class="mx-auto h-20 mb-4 rounded-2xl shadow-lg">
+                    <h1 class="text-2xl font-black">Simulador de puntajes</h1>
+                    <p class="text-sm" style="color: var(--text-secondary);">LUMEN PREICFES</p>
+                </div>
+
+                <div class="card p-6 text-center animated-item">
+                    <h2 class="text-lg font-bold mb-4">Puntaje Global</h2>
+                    <div class="relative w-40 h-40 mx-auto flex items-center justify-center">
+                        <div id="global-score-circle" style="position: absolute; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(var(--accent-color) 0deg, var(--bg-tertiary) 0deg); transition: background 0.8s ease-out, --accent-color 0.5s ease;"></div>
+                        <span id="global-score-value" class="text-5xl font-extrabold z-10">0</span>
+                    </div>
+                    <div id="global-feedback" class="mt-4 text-sm font-medium h-5"></div>
+                </div>
+
+                <div class="card p-6 animated-item">
+                    <h2 class="text-lg font-bold mb-4">Resumen Rápido</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="text-sm font-semibold text-green-400 mb-2">Áreas Destacadas</h3>
+                            <div id="strongest-areas-list" class="space-y-1 text-sm font-medium"></div>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-red-400 mb-2">Áreas a Mejorar</h3>
+                            <div id="weakest-areas-list" class="space-y-1 text-sm font-medium"></div>
+                        </div>
+                    </div>
+                </div>
+                
+
+                <div class="card p-6 animated-item">
+                   <h2 class="text-lg font-bold mb-4">Acciones</h2>
+                   <div class="flex flex-col space-y-3">
+                       <button id="reset-all-btn" class="btn w-full bg-red-600/80 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600">Reiniciar Todo</button>
+                       <button id="save-report-btn" class="btn w-full text-white font-semibold py-2 px-4 rounded-lg" style="background-color: var(--accent-color); hover:background-color: var(--accent-hover);">Guardar Reporte</button>
+                   </div>
+                </div>
+            </aside>
+
+            <main class="lg:col-span-9 space-y-8">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                    <div class="card p-6 animated-item">
+                        <h2 class="text-xl font-bold mb-4 text-center">Perfil de Desempeño</h2>
+                        <div class="relative h-80 w-full"><canvas id="performanceChart"></canvas></div>
+                    </div>
+                    <div class="card p-6 flex flex-col animated-item">
+                        <div class="flex justify-center items-center gap-2 mb-4">
+                            <h2 class="text-xl font-bold text-center">Comparativa Nacional (2024)</h2>
+                            <button id="info-comparison-btn" class="btn w-6 h-6 rounded-full flex items-center justify-center" style="background-color: var(--bg-tertiary);">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="relative h-80 w-full flex-grow"><canvas id="comparisonChart"></canvas></div>
+                        <a href="https://www.javeriana.edu.co/recursosdb/d/lee/inf-114-informe-saber-11-2025-lee" target="_blank" rel="noopener noreferrer" class="mt-4 text-center text-xs hover:underline" style="color: var(--text-secondary);">
+                            Fuente: Lab. de Economía de la Educación (LEE) - U. Javeriana
+                        </a>
+                    </div>
+                </div>
+
+                <div class="animated-item">
+                    <h2 class="text-2xl font-bold mb-6">Calculadora de Puntajes por Área</h2>
+                    <div id="calculator" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <button id="theme-toggle" class="btn fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110" style="background-color: var(--bg-tertiary);">
+        <svg id="theme-icon-light" class="w-7 h-7 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 18a1 1 0 01-1-1v-1a1 1 0 112 0v1a1 1 0 01-1 1zm-4.95-2.464A1 1 0 013.636 14.12l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 010-1.414zM1.464 8.536a1 1 0 011.414 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 010-1.414zM4.95 6.364a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707z"></path></svg>
+        <svg id="theme-icon-dark" class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+    </button>
+    
+    <div id="toast" class="fixed bottom-24 right-5 bg-green-500 text-white py-2 px-5 rounded-lg shadow-xl opacity-0 translate-y-5 transition-all duration-300">Reporte copiado</div>
+    
+    <div id="detail-modal" class="modal-overlay">
+        <div class="modal-content p-6 rounded-2xl">
+             <div id="modal-header" class="flex justify-between items-center mb-4">
+                 <h2 id="modal-title" class="text-2xl font-bold">Detalles del Nivel</h2>
+                 <button id="close-modal-btn" class="text-3xl font-bold leading-none">&times;</button>
+            </div>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+    <div id="info-modal" class="modal-overlay">
+        <div class="modal-content p-6 rounded-2xl">
+             <div class="flex justify-between items-center mb-4">
+                 <h2 class="text-2xl font-bold">¿Qué significa cada promedio?</h2>
+                 <button id="close-info-modal-btn" class="text-3xl font-bold leading-none">&times;</button>
+            </div>
+            <div class="space-y-4 text-sm" style="color: var(--text-secondary);">
+                 <p><strong class="font-bold" style="color: var(--text-primary);">Promedio Colegio Públicos:</strong> Es el puntaje promedio obtenido por estudiantes de colegios públicos. Te sirve como referencia si estudias en uno de ellos.</p>
+                 <p><strong class="font-bold" style="color: var(--text-primary);">Promedio Colegio Privados:</strong> Es el puntaje promedio de los estudiantes de colegios privados. Históricamente, este promedio tiende a ser más alto.</p>
+                 <p>Compararte con ambos te da una visión más completa y justa de tu rendimiento, permitiéndote establecer metas más realistas según tu contexto.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // --- LÓGICA DE LA APLICACIÓN ---
+        const performanceDetails = {
+            lectura: {
+                1: { title: "Nivel 1 (0-35)", general: "Identifica elementos literales en textos continuos y discontinuos sin establecer relaciones.", evidences: ["Reconoce información explícita.", "Localiza párrafos y enunciados; distingue proposición de párrafo."] },
+                2: { title: "Nivel 2 (36-50)", general: "Además del nivel 1, comprende textos de forma literal y reconoce relaciones básicas.", evidences: ["Identifica estructura textual.", "Encuentra sinónimos, antónimos.", "Detecta intención comunicativa.", "Reconoce relaciones de contraste, similitud, complementación.", "Percibe sentido local/global."] },
+                3: { title: "Nivel 3 (51-65)", general: "Interpreta información implícita, distingue estructuras, estrategias y valora argumentos.", evidences: ["Jerarquiza información.", "Realiza inferencias en textos continuos y discontinuos.", "Reconoce relaciones causa-efecto, oposición, etc.", "Analiza marcadores textuales, figuras literarias y estructura sintáctica.", "Sintetiza información; evalúa argumentos."] },
+                4: { title: "Nivel 4 (66-100)", general: "Reflexiona críticamente sobre la visión del autor, elementos paratextuales y aplica análisis literario.", evidences: ["Propone soluciones interpretativas.", "Evalúa estrategias discursivas.", "Relaciona dos o más textos.", "Usa conceptos de análisis literario.", "Considera contexto socio-ideológico.", "Construye argumentos propios; asume postura crítica.", "Formula hipótesis de lectura."] }
+            },
+            matematicas: {
+                1: { title: "Nivel 1 (0-35)", general: "Interpreta información puntual y situaciones cotidianas; identifica la tarea.", evidences: ["Lectura directa de datos numéricos y operaciones sencillas."] },
+                2: { title: "Nivel 2 (36-50)", general: "Diferencia posibles procedimientos; asocia conceptos básicos y patrones.", evidences: ["Selección de procedimientos matemáticos adecuados a problemas simples."] },
+                3: { title: "Nivel 3 (51-70)", general: "Analiza alternativas y elige la mejor solución. Relaciona variables y convierte datos en conclusiones.", evidences: ["Análisis de alternativas y elección de la mejor solución.", "Relación de variables y conversión de datos en conclusiones."] },
+                4: { title: "Nivel 4 (71-100)", general: "Deduce y combina conceptos, ecuaciones y procedimientos complejos.", evidences: ["Resolución de problemas nuevos mediante aplicaciones complejas.", "Modelado de fenómenos y justificación de decisiones basadas en datos."] }
+            },
+            sociales: {
+                1: { title: "Nivel 1 (0-40)", general: "Reconoce información básica: hechos, datos sencillos.", evidences: ["Uso de conceptos elementales en contextos históricos y geográficos."] },
+                2: { title: "Nivel 2 (41-55)", general: "Comprende relaciones entre hechos; interpreta conceptos básicos.", evidences: ["Explicación de relaciones simples y contexto de eventos sociales."] },
+                3: { title: "Nivel 3 (56-70)", general: "Analiza situaciones, relaciona fuentes, comprende argumentos e estruturas sociais.", evidences: ["Interpretación de múltiples perspectivas y análisis de fenómenos sociales."] },
+                4: { title: "Nivel 4 (71-100)", general: "Conoce disposiciones constitucionales, evalúa argumentos, propone soluciones aceptables socialmente.", evidences: ["Identificación de soluciones ciudadanas, argumentación en debates sociales."] }
+            },
+            ciencias: {
+                1: { title: "Nivel 1 (0-40)", general: "Reconoce información explícita en gráficos/tablas.", evidences: ["Extracción de datos directos sin interpretación profunda."] },
+                2: { title: "Nivel 2 (41-55)", general: "Identifica patrones, relaciona esquemas, hace predicciones básicas.", evidences: ["Reconocimiento de tendencias científicas a nivel básico."] },
+                3: { title: "Nivel 3 (56-70)", general: "Interrelaciona conceptos y leyes, distingue evidencia vs. conclusión y plantea hipótesis.", evidences: ["Análisis crítico de datos empíricos y formulación de hipótesis."] },
+                4: { title: "Nivel 4 (71-100)", general: "Aplica conceptos, teorías y leyes para resolver situaciones complejas.", evidences: ["Argumentación científica y justificación de soluciones."] }
+            },
+            ingles: {
+                1: { title: "Nivel A- (0-47)", general: "Por debajo de A1. Vocabulario y estructuras muy básicos.", evidences: ["No alcanza el nivel mínimo para ser clasificado en A1."] },
+                2: { title: "Nivel A1 (48-57)", general: "Comprende y utiliza expresiones cotidianas y frases muy sencillas.", evidences: ["Puede presentarse a sí mismo y a otros, pedir y dar información personal básica."] },
+                3: { title: "Nivel A2 (58-67)", general: "Comprende frases y expresiones de uso frecuente relacionadas con áreas de experiencia que son de importancia inmediata.", evidences: ["Puede comunicarse en tareas simples y habituales que requieren un intercambio simple y directo de información."] },
+                4.5: { title: "Nivel B1 (68-78)", general: "Es capaz de comprender los puntos principales de textos claros y en lengua estándar si tratan sobre cuestiones que le son conocidas.", evidences: ["Sabe desenvolverse en la mayor parte de las situaciones que pueden surgir durante un viaje.", "Es capaz de producir textos sencillos y coherentes sobre temas que le son familiares."] },
+                5: { title: "Nivel B+ (79-100)", general: "Supera el nivel B1. Es capaz de entender las ideas principales de textos complejos.", evidences: ["Puede relacionarse con hablantes nativos con un grado suficiente de fluidez y naturalidad.", "Puede producir textos claros y detallados sobre temas diversos."] }
+            }
+        };
+        const scoreLookupTable = {
+            lectura:     [100, 80, 78, 75, 72, 69, 66, 63, 60, 57, 54, 51, 49, 46, 43, 40, 37, 34, 31, 29, 26, 23, 21, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20],
+            matematicas: [100, 82, 80, 77, 76, 73, 69, 67, 66, 65, 63, 62, 60, 59, 57, 56, 55, 53, 52, 51, 49, 48, 47, 45, 44, 42, 41, 40, 38, 37, 36, 34, 33, 32, 30, 30, 30, 30, 30, 30, 30, 30],
+            sociales:    [100, 82, 80, 77, 76, 73, 69, 67, 66, 65, 63, 62, 60, 59, 57, 56, 55, 53, 52, 51, 49, 48, 47, 45, 44, 42, 41, 40, 38, 37, 36, 34, 33, 32, 30, 30, 30, 30, 30, 30, 30, 30],
+            ciencias:    [100, 81, 80, 77, 76, 73, 69, 67, 66, 65, 63, 62, 60, 59, 57, 56, 55, 53, 52, 51, 49, 48, 47, 45, 44, 42, 41, 40, 38, 37, 36, 34, 33, 32, 30, 30, 30, 30, 30, 30, 30, 30],
+            ingles:      [100, 83, 80, 77, 76, 73, 69, 64, 66, 65, 63, 62, 60, 59, 57, 56, 55, 53, 52, 51, 49, 48, 47, 45, 44, 42, 41, 40, 38, 37, 36, 34, 33, 32, 30, 30, 30, 30, 30, 30, 30, 30]
+        };
+        const subjects = [
+            { id: 'matematicas', name: 'Matemáticas', emoji: '🧮', color: '#00BFFF' },
+            { id: 'lectura', name: 'Lectura', emoji: '📖', color: '#FF1493' },
+            { id: 'sociales', name: 'Sociales', emoji: '🧠', color: '#BF00FF' },
+            { id: 'ciencias', name: 'Ciencias', emoji: '🔬', color: '#39FF14' },
+            { id: 'ingles', name: 'Inglés', emoji: '🌍', color: '#FFD700' }
+        ];
+        const officialAverages = { matematicas: 50.1, lectura: 51.5, sociales: 47.1, ciencias: 49.0, ingles: 49.5 };
+        const nonOfficialAverages = { matematicas: 58.5, lectura: 59.8, sociales: 55.4, ciencias: 57.3, ingles: 58.9 };
+        
+        const weights = { matematicas: 3, lectura: 3, sociales: 3, ciencias: 3, ingles: 1 };
+        let currentScores = {};
+        let performanceChart, comparisonChart;
+        let currentTrailColor = null;
+        let activeSubjectColor = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTheme();
+            initializeCalculator();
+            initializeCharts();
+            initializeActionButtons();
+            initializeModal();
+            initializeParticleBackground();
+            initializeThematicTrail();
+            initializeSecurity();
+            updateAll(true);
+            
+            anime({
+                targets: '.animated-item',
+                translateY: [20, 0],
+                opacity: [0, 1],
+                filter: ['blur(5px)', 'blur(0px)'],
+                delay: anime.stagger(100),
+                duration: 800,
+                easing: 'easeOutCubic'
+            });
+        });
+
+        function initializeTheme() {
+            const toggle = document.getElementById('theme-toggle');
+            const lightIcon = document.getElementById('theme-icon-light');
+            const darkIcon = document.getElementById('theme-icon-dark');
+            
+            const updateThemeUI = () => {
+                const isLight = document.documentElement.classList.contains('light');
+                document.getElementById('theme-color-meta').setAttribute('content', isLight ? '#f1f5f9' : '#0f172a');
+                lightIcon.classList.toggle('hidden', !isLight);
+                darkIcon.classList.toggle('hidden', isLight);
+            };
+
+            toggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('light');
+                document.documentElement.classList.toggle('dark');
+                updateThemeUI();
+                updateChartColors();
+            });
+            updateThemeUI();
+        }
+
+        function initializeCalculator() {
+            const container = document.getElementById('calculator');
+            subjects.forEach((subject, index) => {
+                currentScores[subject.id] = getScoreFromTable(0, subject.id);
+                const card = createSubjectCard(subject);
+                card.classList.add('animated-item');
+                if (subject.id === 'ingles') {
+                    card.classList.add('sm:col-span-2', 'xl:col-span-4');
+                }
+                container.appendChild(card);
+                const minusButton = card.querySelector('.minus-btn');
+                const plusButton = card.querySelector('.plus-btn');
+
+                // CAMBIO: Lógica de eventos para compatibilidad móvil
+                const handleMinus = (e) => { e.preventDefault(); adjustErrors(subject.id, -1); };
+                const handlePlus = (e) => { e.preventDefault(); adjustErrors(subject.id, 1); };
+
+                minusButton.addEventListener('click', handleMinus);
+                minusButton.addEventListener('touchstart', handleMinus, { passive: false });
+                plusButton.addEventListener('click', handlePlus);
+                plusButton.addEventListener('touchstart', handlePlus, { passive: false });
+
+                card.querySelector(`#errors-${subject.id}`).addEventListener('input', (e) => handleInput(e, subject));
+                card.querySelector(`#achieved-levels-btn-${subject.id}`).addEventListener('click', () => showDetailsModal(subject.id, 'achieved'));
+                card.querySelector(`#missing-levels-btn-${subject.id}`).addEventListener('click', () => showDetailsModal(subject.id, 'missing'));
+            });
+        }
+
+        function initializeCharts() {
+            const radarCtx = document.getElementById('performanceChart').getContext('2d');
+            performanceChart = new Chart(radarCtx, { type: 'radar', data: getRadarData(), options: getRadarOptions() });
+            
+            const barCtx = document.getElementById('comparisonChart').getContext('2d');
+            comparisonChart = new Chart(barCtx, { type: 'bar', data: getBarData(), options: getBarOptions() });
+        }
+        
+        function initializeActionButtons() {
+            const resetBtn = document.getElementById('reset-all-btn');
+            const saveBtn = document.getElementById('save-report-btn');
+            
+            const handleReset = (e) => {
+                e.preventDefault();
+                subjects.forEach(subject => {
+                    const input = document.getElementById(`errors-${subject.id}`);
+                    if (input.value !== '0') {
+                        input.value = 0;
+                        input.dispatchEvent(new Event('input'));
+                    }
+                });
+            };
+
+            const handleSave = (e) => {
+                e.preventDefault();
+                saveReportToClipboard();
+            };
+
+            resetBtn.addEventListener('click', handleReset);
+            resetBtn.addEventListener('touchstart', handleReset, { passive: false });
+            saveBtn.addEventListener('click', handleSave);
+            saveBtn.addEventListener('touchstart', handleSave, { passive: false });
+        }
+
+        function initializeModal() {
+            const detailModal = document.getElementById('detail-modal');
+            document.getElementById('close-modal-btn').addEventListener('click', () => detailModal.classList.remove('active'));
+            detailModal.addEventListener('click', (e) => { if (e.target === detailModal) detailModal.classList.remove('active'); });
+            
+            const infoModal = document.getElementById('info-modal');
+            const infoBtn = document.getElementById('info-comparison-btn');
+            const handleInfoOpen = (e) => { e.preventDefault(); infoModal.classList.add('active'); };
+            infoBtn.addEventListener('click', handleInfoOpen);
+            infoBtn.addEventListener('touchstart', handleInfoOpen, { passive: false });
+
+            document.getElementById('close-info-modal-btn').addEventListener('click', () => infoModal.classList.remove('active'));
+            infoModal.addEventListener('click', (e) => { if (e.target === infoModal) infoModal.classList.remove('active'); });
+        }
+
+        function createSubjectCard(subject) {
+            const card = document.createElement('div');
+            card.className = 'card p-6 shadow-lg flex flex-col';
+            card.style.setProperty('--glow-color', subject.color);
+            const maxErrors = scoreLookupTable[subject.id].length - 1;
+            const initialScore = getScoreFromTable(0, subject.id);
+            card.innerHTML = `
+                <div class="relative z-10 flex flex-col h-full">
+                    <h3 class="text-lg font-bold mb-4">${subject.emoji} ${subject.name}</h3>
+                    <div class="flex items-center gap-2">
+                        <button type="button" class="btn number-input-button minus-btn w-10 h-10 text-2xl rounded-md flex-shrink-0" style="background-color: var(--bg-tertiary);">-</button>
+                        <input type="number" id="errors-${subject.id}" value="0" min="0" max="${maxErrors}" class="number-input w-full text-center h-10 rounded-md text-lg font-semibold" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color);" placeholder="Errores">
+                        <button type="button" class="btn number-input-button plus-btn w-10 h-10 text-2xl rounded-md flex-shrink-0" style="background-color: var(--bg-tertiary);">+</button>
+                    </div>
+                    <div class="text-center my-4">
+                        <span class="text-5xl font-extrabold" id="score-${subject.id}">${initialScore}</span>
+                        <span style="color: var(--text-secondary);">/ 100</span>
+                    </div>
+                    <div class="mt-auto flex gap-2">
+                        <button id="achieved-levels-btn-${subject.id}" class="btn w-full text-white font-semibold py-2 px-3 rounded-lg text-sm bg-green-600/80 hover:bg-green-600"></button>
+                        <button id="missing-levels-btn-${subject.id}" class="btn w-full text-white font-semibold py-2 px-3 rounded-lg text-sm bg-red-600/80 hover:bg-red-600"></button>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        function adjustErrors(subjectId, amount) {
+            const input = document.getElementById(`errors-${subjectId}`);
+            let val = (parseInt(input.value) || 0) + amount;
+            val = Math.max(0, Math.min(val, parseInt(input.max)));
+            input.value = val;
+            input.dispatchEvent(new Event('input'));
+        }
+
+        function handleInput(event, subject) {
+            const score = getScoreFromTable(parseInt(event.target.value) || 0, subject.id);
+            currentScores[subject.id] = score;
+            
+            const scoreElement = document.getElementById(`score-${subject.id}`);
+            anime({
+                targets: scoreElement,
+                innerHTML: score,
+                round: 1,
+                duration: 400,
+                easing: 'easeOutExpo'
+            });
+
+            updateAll(false);
+        }
+
+        function updateAll(isInitial) {
+            updateGlobalScore(isInitial);
+            updateSummary();
+            updatePerformanceLevels();
+            updateCharts();
+        }
+        
+        function updateSummary() {
+            const strongList = document.getElementById('strongest-areas-list');
+            const weakList = document.getElementById('weakest-areas-list');
+
+            strongList.innerHTML = '';
+            weakList.innerHTML = '';
+
+            const scoresArray = Object.entries(currentScores).map(([id, score]) => ({
+                id,
+                score,
+                name: subjects.find(s => s.id === id).name
+            }));
+
+            const strongAreas = scoresArray.filter(s => s.score >= 80);
+            const weakAreas = scoresArray.filter(s => s.score < 70);
+
+            if (scoresArray.every(s => s.score >= 80)) {
+                strongList.innerHTML = `<p class="text-green-400 font-bold">¡Felicitaciones! Todas tus áreas son destacadas.</p>`;
+            } else if (strongAreas.length > 0) {
+                strongAreas.forEach(area => {
+                    const p = document.createElement('p');
+                    p.textContent = area.name;
+                    strongList.appendChild(p);
+                });
+            } else {
+                strongList.innerHTML = `<p style="color: var(--text-secondary);">Ninguna por ahora.</p>`;
+            }
+
+            if (weakAreas.length > 0) {
+                weakAreas.forEach(area => {
+                    const p = document.createElement('p');
+                    p.textContent = area.name;
+                    weakList.appendChild(p);
+                });
+            } else {
+                weakList.innerHTML = `<p style="color: var(--text-secondary);">¡Excelente! Ninguna área por debajo del umbral.</p>`;
+            }
+        }
+
+        function updatePerformanceLevels() {
+            subjects.forEach(subject => {
+                const score = currentScores[subject.id];
+                const currentLevelKey = getPerformanceLevel(subject.id, score);
+                const allLevels = Object.keys(performanceDetails[subject.id]);
+
+                const achievedLevels = allLevels.filter(level => parseFloat(level) <= parseFloat(currentLevelKey));
+                const missingLevels = allLevels.filter(level => parseFloat(level) > parseFloat(currentLevelKey));
+
+                const achievedBtn = document.getElementById(`achieved-levels-btn-${subject.id}`);
+                const missingBtn = document.getElementById(`missing-levels-btn-${subject.id}`);
+
+                achievedBtn.style.display = achievedLevels.length > 0 ? 'block' : 'none';
+                if (achievedLevels.length > 0) achievedBtn.innerHTML = `Alcanzados (${achievedLevels.length})`;
+                
+                missingBtn.style.display = missingLevels.length > 0 ? 'block' : 'none';
+                if (missingLevels.length > 0) missingBtn.innerHTML = `Faltantes (${missingLevels.length})`;
+
+                const bothVisible = achievedLevels.length > 0 && missingLevels.length > 0;
+                achievedBtn.style.width = bothVisible ? '50%' : '100%';
+                missingBtn.style.width = bothVisible ? '50%' : '100%';
+            });
+        }
+
+        function calculateGlobalScore() {
+            return Math.round(subjects.reduce((sum, s) => sum + currentScores[s.id] * weights[s.id], 0) / 13 * 5);
+        }
+
+        function updateGlobalScore(isInitial) {
+            const finalScore = calculateGlobalScore();
+            const scoreElement = document.getElementById('global-score-value');
+            const circle = document.getElementById('global-score-circle');
+            const feedbackElement = document.getElementById('global-feedback');
+
+            let scoreColor = '#ef4444'; // Rojo por defecto (bajo)
+            if (finalScore > 400) {
+                scoreColor = '#4ade80'; // Verde (excelente)
+            } else if (finalScore > 350) {
+                scoreColor = '#60a5fa'; // Azul (muy bien)
+            } else if (finalScore > 250) {
+                scoreColor = '#facc15'; // Amarillo (buen comienzo)
+            }
+            circle.style.setProperty('--accent-color', scoreColor);
+
+            const updateVisuals = (score) => {
+                circle.style.background = `conic-gradient(var(--accent-color) ${score / 500 * 360}deg, var(--bg-tertiary) 0deg)`;
+            };
+
+            const updateFeedback = () => {
+                const feedback = getGlobalFeedback(finalScore);
+                feedbackElement.innerHTML = `<p class="${feedback.color} font-semibold">${feedback.message}</p>`;
+            };
+            
+            const scoreObj = { value: isInitial ? 0 : parseInt(scoreElement.textContent) };
+            anime({
+                targets: scoreObj,
+                value: finalScore,
+                round: 1,
+                duration: 1200,
+                easing: 'easeOutCubic',
+                update: () => {
+                    scoreElement.textContent = scoreObj.value;
+                    updateVisuals(scoreObj.value);
+                },
+                complete: updateFeedback
+            });
+        }
+        
+        function getGlobalFeedback(score) {
+            if (score > 400) return { message: "¡Excelente!", color: "text-green-400" };
+            if (score > 350) return { message: "¡Muy Bien!", color: "text-blue-400" };
+            if (score > 250) return { message: "Buen Comienzo", color: "text-yellow-400" };
+            return { message: "A Mejorar", color: "text-red-400" };
+        }
+        
+        function getScoreFromTable(e, s) { return scoreLookupTable[s][e] || scoreLookupTable[s].slice(-1)[0]; }
+        
+        function saveReportToClipboard() {
+            let report = `--- REPORTE DE DIAGNÓSTICO LUMEN ---\n`;
+            report += `Puntaje Global Simulado: ${calculateGlobalScore()} / 500\n\n`;
+            subjects.forEach(s => { report += `${s.name}: ${currentScores[s.id]} / 100\n`; });
+            navigator.clipboard.writeText(report).then(() => {
+                const toast = document.getElementById('toast');
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+                setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(1.25rem)'; }, 3000);
+            });
+        }
+        
+        function updateCharts() {
+            if (!performanceChart || !comparisonChart) return;
+            const scores = subjects.map(s => currentScores[s.id]);
+            performanceChart.data.datasets[0].data = scores;
+            comparisonChart.data.datasets[0].data = scores;
+            comparisonChart.data.datasets[1].data = subjects.map(s => officialAverages[s.id]);
+            comparisonChart.data.datasets[2].data = subjects.map(s => nonOfficialAverages[s.id]);
+            performanceChart.update('none');
+            comparisonChart.update('none');
+        }
+        
+        function updateChartColors() {
+            const isLight = document.documentElement.classList.contains('light');
+            const textColor = isLight ? '#0f172a' : '#f8fafc';
+            const gridColor = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)';
+            
+            if (performanceChart) {
+                const pOptions = performanceChart.options;
+                pOptions.plugins.legend.labels.color = textColor;
+                pOptions.scales.r.pointLabels.color = textColor;
+                pOptions.scales.r.grid.color = gridColor;
+                pOptions.scales.r.angleLines.color = gridColor;
+                pOptions.scales.r.ticks.color = textColor;
+                pOptions.scales.r.ticks.backdropColor = isLight ? '#f1f5f9' : '#0f172a';
+                performanceChart.data.datasets[0].borderColor = textColor;
+                performanceChart.data.datasets[0].pointBackgroundColor = textColor;
+                performanceChart.update('none');
+            }
+            if (comparisonChart) {
+                const cOptions = comparisonChart.options;
+                cOptions.plugins.legend.labels.color = textColor;
+                cOptions.scales.x.ticks.color = textColor;
+                cOptions.scales.y.ticks.color = textColor;
+                comparisonChart.update('none');
+            }
+        }
+
+        function getChartBaseOptions() {
+            const isLight = document.documentElement.classList.contains('light');
+            const computedStyle = getComputedStyle(document.documentElement);
+            return {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { 
+                    tooltip: {
+                        backgroundColor: isLight ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)',
+                        titleColor: isLight ? '#0f172a' : '#f8fafc',
+                        bodyColor: isLight ? '#0f172a' : '#f8fafc',
+                        borderColor: computedStyle.getPropertyValue('--border-color'),
+                        borderWidth: 1,
+                        titleFont: { family: 'Inter', weight: 'bold' },
+                        bodyFont: { family: 'Inter' }
+                    }
+                }
+            };
+        }
+
+        function getRadarOptions() {
+            const opts = getChartBaseOptions();
+            const isLight = document.documentElement.classList.contains('light');
+            opts.scales = { r: { min: 0, max: 100, pointLabels: { font: { size: 14, family: 'Inter' } }, ticks: { backdropColor: isLight ? '#f1f5f9' : '#0f172a' } } };
+            opts.plugins.legend = { labels: { color: isLight ? '#0f172a' : '#f8fafc', boxWidth: 12, font: { size: 14, family: 'Inter' } } };
+            return opts;
+        }
+        
+
+        function getBarOptions() {
+            const opts = getChartBaseOptions();
+            const isLight = document.documentElement.classList.contains('light');
+            opts.scales = { y: { beginAtZero: true }, x: {} };
+            opts.plugins.tooltip = {
+                ...opts.plugins.tooltip,
+                callbacks: {
+                    label: function(context) {
+                        const datasetLabel = context.dataset.label || '';
+                        const value = context.parsed.y;
+                        return `${datasetLabel}: ${value}`;
+                    },
+                    footer: function(tooltipItems) {
+                        const index = tooltipItems[0].dataIndex;
+                        const yourScore = comparisonChart.data.datasets[0].data[index];
+                        const publicScore = comparisonChart.data.datasets[1].data[index];
+                        const privateScore = comparisonChart.data.datasets[2].data[index];
+                        return [
+                            `Tu puntaje: ${yourScore}`,
+                            `Prom. Público: ${publicScore}`,
+                            `Prom. Privado: ${privateScore}`
+                        ];
+                    }
+                }
+            };
+            opts.plugins.legend = {
+                labels: {
+                    color: isLight ? '#0f172a' : '#f8fafc',
+                    boxWidth: 12,
+                    font: { size: 14, family: 'Inter' },
+                    generateLabels: function(chart) {
+                        const originalLabels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                        const defaultColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+                        
+                        originalLabels.forEach(label => {
+                            if (label.text === 'Tu Puntaje') {
+                                label.fillStyle = activeSubjectColor || defaultColor;
+                            }
+                        });
+                        return originalLabels;
+                    }
+                }
+            };
+            opts.onHover = (event, chartElement) => {
+                const defaultColor = getComputedStyle(document.body).getPropertyValue('--text-primary');
+                if (chartElement.length) {
+                    const index = chartElement[0].index;
+                    activeSubjectColor = subjects[index].color;
+                } else {
+                    activeSubjectColor = null;
+                }
+                comparisonChart.update('none');
+            };
+            return opts;
+        }
+
+        function getRadarData() {
+            const defaultColor = getComputedStyle(document.body).getPropertyValue('--text-primary');
+            return { 
+                labels: subjects.map(s => s.name), 
+                datasets: [{ 
+                    label: 'Tu Puntaje', 
+                    data: [], 
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+                    borderColor: defaultColor, 
+                    borderWidth: 2,
+                    pointBackgroundColor: defaultColor,
+                    pointHoverBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff'
+                }] 
+            };
+        }
+        
+        function getBarData() {
+            return {
+                labels: subjects.map(s => s.name),
+                datasets: [
+                    { label: 'Tu Puntaje', data: [], backgroundColor: subjects.map(s => s.color), borderRadius: 4 },
+                    { label: 'Prom. Colegio Públicos', data: [], backgroundColor: 'rgba(20, 184, 166, 0.6)', borderRadius: 4 },
+                    { label: 'Prom. Colegio Privados', data: [], backgroundColor: 'rgba(168, 85, 247, 0.6)', borderRadius: 4 }
+                ]
+            };
+        }
+        
+        function getPerformanceLevel(subjectId, score) {
+            switch (subjectId) {
+                case 'lectura': if (score <= 35) return 1; if (score <= 50) return 2; if (score <= 65) return 3; return 4;
+                case 'matematicas': if (score <= 35) return 1; if (score <= 50) return 2; if (score <= 70) return 3; return 4;
+                case 'sociales': if (score <= 40) return 1; if (score <= 55) return 2; if (score <= 70) return 3; return 4;
+                case 'ciencias': if (score <= 40) return 1; if (score <= 55) return 2; if (score <= 70) return 3; return 4;
+                case 'ingles': if (score <= 47) return 1; if (score <= 57) return 2; if (score <= 67) return 3; if (score <= 78) return 4.5; return 5;
+                default: return 1;
+            }
+        }
+        
+        function getLevelStyle(levelKey) {
+            const levelNum = Math.floor(levelKey);
+            if (levelNum === 4 || levelNum === 5) return { bgColor: 'rgba(59, 130, 246, 0.2)', textColor: '#60a5fa' };
+            if (levelNum === 3) return { bgColor: 'rgba(34, 197, 94, 0.2)', textColor: '#4ade80' };
+            if (levelNum === 2) return { bgColor: 'rgba(234, 179, 8, 0.2)', textColor: '#facc15' };
+            return { bgColor: 'rgba(239, 68, 68, 0.2)', textColor: '#f87171' };
+        }
+
+        function showDetailsModal(subjectId, type) {
+            const score = currentScores[subjectId];
+            const currentLevelKey = getPerformanceLevel(subjectId, score);
+            const allLevels = Object.keys(performanceDetails[subjectId]);
+
+            const relevantLevels = (type === 'achieved')
+                ? allLevels.filter(level => parseFloat(level) <= parseFloat(currentLevelKey))
+                : allLevels.filter(level => parseFloat(level) > parseFloat(currentLevelKey));
+
+            const title = (type === 'achieved') ? 'Niveles Alcanzados' : 'Niveles Faltantes';
+            document.getElementById('modal-title').textContent = `${title} en ${subjects.find(s=>s.id === subjectId).name}`;
+
+            let modalBodyContent = '';
+            if (relevantLevels.length === 0) {
+                modalBodyContent = `<p style="color: var(--text-secondary);">No hay niveles en esta categoría.</p>`;
+            } else {
+                relevantLevels.forEach(levelKey => {
+                    const details = performanceDetails[subjectId][levelKey];
+                    const style = getLevelStyle(levelKey);
+                    modalBodyContent += `
+                        <div class="p-4 rounded-lg mb-4" style="background-color: ${style.bgColor}; border: 1px solid ${style.textColor};">
+                            <p class="font-bold text-lg" style="color: ${style.textColor};">${details.title}</p>
+                            <p class="text-sm mt-1" style="color: var(--text-secondary);">${details.general}</p>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('modal-body').innerHTML = modalBodyContent;
+            document.getElementById('detail-modal').classList.add('active');
+        }
+
+        function initializeThematicTrail() {
+            const cards = document.querySelectorAll('.card');
+            const body = document.querySelector('body');
+            
+            const setDefaultColor = () => {
+                currentTrailColor = getComputedStyle(body).getPropertyValue('--accent-color').trim();
+            };
+            
+            setDefaultColor(); 
+
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    currentTrailColor = getComputedStyle(card).getPropertyValue('--glow-color').trim();
+                });
+                card.addEventListener('mouseleave', setDefaultColor);
+            });
+
+            document.getElementById('theme-toggle').addEventListener('click', () => {
+                setTimeout(setDefaultColor, 50);
+            });
+        }
+
+        function initializeParticleBackground() {
+            const canvas = document.getElementById('particle-canvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            let mouse = { x: null, y: null };
+
+            class Particle {
+                constructor(x, y, directionX, directionY, size, color, isTrail = false) {
+                    this.x = x;
+                    this.y = y;
+                    this.directionX = directionX;
+                    this.directionY = directionY;
+                    this.size = size;
+                    this.color = color;
+                    this.isTrail = isTrail;
+                    this.opacity = 1;
+                }
+                draw() {
+                    ctx.save();
+                    ctx.globalAlpha = this.opacity;
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                    ctx.restore();
+                }
+                update() {
+                    if (this.isTrail) {
+                        this.x += this.directionX;
+                        this.y += this.directionY;
+                        if (this.size > 0.2) this.size -= 0.1;
+                        this.opacity -= 0.015;
+                    } else {
+                        if (this.x > canvas.width || this.x < 0) this.directionX = -this.directionX;
+                        if (this.y > canvas.height || this.y < 0) this.directionY = -this.directionY;
+                        this.x += this.directionX;
+                        this.y += this.directionY;
+                    }
+                    this.draw();
+                }
+            }
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                init();
+            }
+            window.addEventListener('resize', resizeCanvas);
+            
+            window.addEventListener('mousemove', (event) => {
+                mouse.x = event.clientX;
+                mouse.y = event.clientY;
+            });
+            window.addEventListener('mouseout', () => {
+                mouse.x = null;
+                mouse.y = null;
+            });
+            window.addEventListener('touchstart', (event) => {
+                if (event.touches.length > 0) {
+                    mouse.x = event.touches[0].clientX;
+                    mouse.y = event.touches[0].clientY;
+                }
+            }, { passive: true });
+            window.addEventListener('touchmove', (event) => {
+                if (event.touches.length > 0) {
+                    mouse.x = event.touches[0].clientX;
+                    mouse.y = event.touches[0].clientY;
+                }
+            }, { passive: true });
+            window.addEventListener('touchend', () => {
+                mouse.x = null;
+                mouse.y = null;
+            });
+            window.addEventListener('touchcancel', () => {
+                mouse.x = null;
+                mouse.y = null;
+            });
+
+            function init() {
+                particles = particles.filter(p => p.isTrail);
+                const isLight = document.documentElement.classList.contains('light');
+                const particleColor = isLight ? 'rgba(100, 116, 139, 0.4)' : 'rgba(100, 116, 139, 0.4)';
+                let numberOfParticles = (canvas.height * canvas.width) / 18000;
+                for (let i = 0; i < numberOfParticles; i++) {
+                    let size = (Math.random() * 1.5) + 1;
+                    let x = (Math.random() * innerWidth);
+                    let y = (Math.random() * innerHeight);
+                    let directionX = (Math.random() * .4) - .2;
+                    let directionY = (Math.random() * .4) - .2;
+                    particles.push(new Particle(x, y, directionX, directionY, size, particleColor, false));
+                }
+            }
+
+            function animate() {
+                requestAnimationFrame(animate);
+                ctx.clearRect(0, 0, innerWidth, innerHeight);
+
+                if (mouse.x && currentTrailColor) {
+                    for (let i = 0; i < 7; i++) {
+                        particles.push(new Particle(
+                            mouse.x,
+                            mouse.y,
+                            (Math.random() - 0.5) * 2,
+                            (Math.random() - 0.5) * 2,
+                            Math.random() * 3 + 2.5,
+                            currentTrailColor,
+                            true
+                        ));
+                    }
+                }
+
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.update();
+                    if (p.isTrail && (p.size <= 0.2 || p.opacity <= 0)) {
+                        particles.splice(i, 1);
+                    }
+                }
+            }
+            
+            resizeCanvas();
+            animate();
+            
+            document.getElementById('theme-toggle').addEventListener('click', init);
+        }
+        
+        function initializeSecurity() {
+            document.addEventListener('contextmenu', event => event.preventDefault());
+
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'F12' ||
+                   (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'J' || event.key === 'C')) ||
+                   (event.ctrlKey && event.key === 'U') ||
+                   (event.ctrlKey && event.key === 'S')) {
+                    event.preventDefault();
+                }
+            });
+
+           const devToolsDetection = () => {
+    const threshold = 160;
+    if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
+        console.warn("⚠️ DevTools detectado");
+        // Aquí podrías ejecutar otra acción, registrar un evento, etc.
+    }
+};
+
+// Ejecutar cada cierto tiempo
+setInterval(devToolsDetection, 1000);
+
+        }
+        
+
+    </script>
+</body>
+</html>
